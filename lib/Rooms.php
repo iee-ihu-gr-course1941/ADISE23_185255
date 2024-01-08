@@ -7,11 +7,12 @@ function joinRoom($roomName): void{
      $st->bind_param('ss',$_SESSION['TOKEN'],$roomName);
      $st->execute();
      $res = $st->get_result();
-     $myArray = array();
-     while($row = $res->fetch_assoc()) {
-         $myArray[] = $row;
+     $r = $res->fetch_assoc();
+     if ($r["joinRoom(?,?)"]){
+         echo json_encode('Success Joining');
+     }else{
+         echo json_encode('Error');
      }
-     echo json_encode($myArray);
 }
 
 function getRooms(): void{

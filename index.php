@@ -7,6 +7,7 @@
 */
 
 
+
 header("Content-type: application/json; charset=UTF-8");
 require_once "lib/ErrorHandler.php";
 set_exception_handler("ErrorHandler::handleException");
@@ -21,48 +22,63 @@ $requestURI = explode("/",$_SERVER["REQUEST_URI"]);
 $httpMethod = $_SERVER['REQUEST_METHOD'];
 
 switch ($requestURI[1]) {
-
-
-    case 'user':
+    case 'user':{
         if($httpMethod=="GET"){
             userAuth($requestURI[2],$requestURI[3]);
             break;
         }elseif($httpMethod=="POST"){
             createUser($requestURI[2],$requestURI[3]);
             break;
+        }elseif($httpMethod=='PUT'){
+            showUserInfo();
+            break;
         }else{
             http_response_code(404);
             break;
         }
+
+    }
     case 'game':
-        if ($httpMethod=="GET"){
+    {
+        if ($httpMethod == "GET") {
             showScoreBoard();
             break;
-        }elseif($httpMethod=="POST"){
-            switch ($requestURI[2]){
-                case 'scoreBoard':{
+        } elseif ($httpMethod == "POST") {
+            switch ($requestURI[2]) {
+                case 'gameState':
+                {
                     getGameState();
                     break;
                 }
-                case 'dice':{
+                case 'dice':
+                {
                     rollDice();
                     break;
                 }
-                case 'move':{
+                case 'move':
+                {
                     movePiece($requestURI[3]);
                     break;
                 }
-                case 'init':{
+                case 'init':
+                {
                     initGame();
+                    break;
+                }
+                default:
+                {
+                    http_response_code(404);
+                    echo json_encode("Not found");
                     break;
                 }
             }
             break;
-        }else{
+        } else {
             http_response_code(404);
             //TODO MAYBE SOMETHING ELSE Like DELETE OR keep 404
             break;
         }
+    }
     case "rooms": {
         if($httpMethod=="POST"){
             joinRoom($requestURI[2]);
@@ -80,9 +96,9 @@ switch ($requestURI[1]) {
             break;
         }
     }
-
-    default:
+    default:{
         echo json_encode("DEFAULT");
         http_response_code(404);
-        exit;
+        break;
+    }
 }

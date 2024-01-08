@@ -26,8 +26,13 @@ function initGame(): void {
     $st->bind_param('s',$_SESSION['TOKEN']);
     $st->execute();
     $res= $st->get_result();
+
     $r = $res->fetch_assoc();
-    print_r($r['initializeGame(?)']);
+    if ($r['initializeGame(?)']){
+        echo json_encode('Successful init');
+    }else{
+        echo json_encode('Error');
+    }
 }
 function getGameState(): void{
     global $conn;

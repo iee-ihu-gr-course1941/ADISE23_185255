@@ -40,3 +40,15 @@ function createUser(string $username,string $password): void{
 
     }
 }
+
+
+function showUserInfo(): void{
+    global $conn;
+    $sql = 'select getUserInfo(?)';
+    $st = $conn->prepare($sql);
+    $st->bind_param('s',$_SESSION['TOKEN']);
+    $st->execute();
+    $res= $st->get_result();
+    $r = $res->fetch_assoc();
+    print_r($r['getUserInfo(?)']);
+}
