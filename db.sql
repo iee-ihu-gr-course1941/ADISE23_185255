@@ -73,89 +73,13 @@ create table gameBoard
         foreign key (lastPlayerRolledTheDice) references player_pieces (playerId)
 );
 
-create definer = kastik@localhost trigger checkIfWon
-    after update
-    on gameBoard
-    for each row
-BEGIN
-    DECLARE gameId_val INT;
-    DECLARE playerPieceA_val INT;
-    DECLARE playerPieceB_val INT;
-    DECLARE playerPieceC_val INT;
-    DECLARE playerPieceD_val INT;
-    declare won tinyint(1);
-
-
-
-    -- Find the pieces for each player
-    SELECT gb.player_a_pieces, gb.player_b_pieces, gb.player_c_pieces, gb.player_d_pieces, gb.gameId
-    INTO playerPieceA_val, playerPieceB_val, playerPieceC_val, playerPieceD_val, gameId_val
-    FROM gameBoard gb
-             JOIN player_pieces ppa ON gb.player_a_pieces = ppa.pieceId
-             JOIN player_pieces ppb ON gb.player_b_pieces = ppb.pieceId
-             JOIN player_pieces ppc ON gb.player_c_pieces = ppc.pieceId
-             JOIN player_pieces ppd ON gb.player_d_pieces = ppd.pieceId
-    WHERE gb.gameId = OLD.gameId;  -- Use OLD to reference the values before the update
-
-
-
-    SELECT count(*) into won
-    FROM player_pieces
-    WHERE pieceId = playerPieceA_val and 58 in (piece1, piece2, piece3, piece4);
-
-    INSERT INTO log SELECT now(), CONCAT_WS(', ','gotInside',won);
-
-    -- If all pieces of player_A are on location 58, update gameStatus to player_a_won
-    IF (won=1) THEN
-        INSERT INTO log SELECT now(), CONCAT_WS(', ','truetrueingotInside',won);
-
-        UPDATE gameBoard SET gameStatus = 'player_a_won' WHERE gameId = gameId_val;
-    END IF;
-
-
-    SELECT 64 in (piece1, piece2, piece3, piece4)
-    INTO won
-    FROM player_pieces
-    WHERE pieceId = playerPieceB_val;
-
-    -- If all pieces of player_B are on location 64, update gameStatus to player_b_won
-    IF (won=1) like 64 THEN
-        UPDATE gameBoard SET gameStatus = 'player_b_won' WHERE gameId = gameId_val;
-    END IF;
-
-    SELECT 70 in (piece1, piece2, piece3, piece4)
-    INTO won
-    FROM player_pieces
-    WHERE pieceId = playerPieceC_val;
-
-    -- If all pieces of player_C are on location 70, update gameStatus to player_c_won
-    IF (won=1) like 70 THEN
-        UPDATE gameBoard SET gameStatus = 'player_c_won' WHERE gameId = gameId_val;
-    END IF;
-
-
-    SELECT 76 in (piece1, piece2, piece3, piece4)
-    INTO won
-    FROM player_pieces
-    WHERE pieceId = playerPieceD_val;
-
-    -- If all pieces of player_D are on location 76, update gameStatus to player_d_won
-    IF (won=1) like 76 THEN
-        UPDATE gameBoard SET gameStatus = 'player_d_won' WHERE gameId = gameId_val;
-    END IF;
-
-
-
-END;
-
 create index player_pieces_gameBoard_gameId_fk
     on player_pieces (pieceId);
 
 alter table player_pieces
     modify pieceId int auto_increment;
 
-create
-    definer = kastik@localhost function createRoom(sessionToken_param varchar(255), roomName_param varchar(255)) returns tinyint(1)
+create function createRoom(sessionToken_param varchar(255), roomName_param varchar(255)) returns tinyint(1)
 begin
     declare userId_val varchar(255);
 
@@ -178,8 +102,7 @@ begin
     end if;
 end;
 
-create
-    definer = kastik@localhost function createUser(username_param varchar(255), password_param varchar(255)) returns tinyint(1)
+create function createUser(username_param varchar(255), password_param varchar(255)) returns tinyint(1)
 begin
     if exists(select * from users where username= username_param)then
         signal sqlstate '45000' set message_text = 'Username already exists';
@@ -189,8 +112,7 @@ begin
     end if;
 end;
 
-create
-    definer = kastik@localhost function getGameState(sessionToken_param varchar(255)) returns longtext
+create function getGameState(sessionToken_param varchar(255)) returns longtext
 begin
     declare userId_val int;
     declare currentPlayer_val int;
@@ -286,8 +208,7 @@ begin
            );
 end;
 
-create
-    definer = kastik@localhost function getUserInfo(sessionToken_param varchar(255)) returns longtext
+create function getUserInfo(sessionToken_param varchar(255)) returns longtext
 begin
     declare userId_val int;
     declare username_val varchar(255);
@@ -311,8 +232,7 @@ begin
            );
 end;
 
-create
-    definer = kastik@localhost function initializeGame(sessionToken_param varchar(255)) returns tinyint(1)
+create function initializeGame(sessionToken_param varchar(255)) returns tinyint(1)
 begin
     declare userId_val int;
     declare roomCreator_val int;
@@ -377,8 +297,8 @@ begin
     select LAST_INSERT_ID() into playerA_pieceId;
 
 
-    insert into gameBoard (room,dice, playerTurn, gameStatus, lastPlayerRolledTheDice,player_a_pieces)
-    values (roomName_val,0,userId_val,'running',null,playerA_pieceId);
+    insert into gameBoard (gameId,room,dice, playerTurn, gameStatus, lastPlayerRolledTheDice,player_a_pieces)
+    values (null,roomName_val,0,userId_val,'running',null,playerA_pieceId);
     select LAST_INSERT_ID() into gameId_val;
 
     -- Insert initial data into player_pieces table for the other players
@@ -399,16 +319,15 @@ begin
         select LAST_INSERT_ID() into playerD_pieceId;
     end if;
 
-
-    update gameBoard set player_b_pieces= playerB_pieceId,player_c_pieces=playerC_pieceId,player_d_pieces=playerD_pieceId
-    where gameId=gameId_val;
+    update gameBoard  gb
+    set gb.player_b_pieces = playerB_pieceId, gb.player_c_pieces=playerC_pieceId,gb.player_d_pieces=playerD_pieceId
+    where gb.gameId=gameId_val;
 
     return true;
 
 end;
 
-create
-    definer = kastik@localhost function joinRoom(sessionToken_param varchar(255), roomName_param varchar(255)) returns tinyint(1)
+create function joinRoom(sessionToken_param varchar(255), roomName_param varchar(255)) returns tinyint(1)
 begin
     declare userId_val int;
     declare player_b_val int;
@@ -484,8 +403,7 @@ begin
 
 end;
 
-create
-    definer = kastik@localhost procedure movePiece(IN sessionToken_param varchar(255), IN pieceSelection_param int)
+create procedure movePiece(IN sessionToken_param varchar(255), IN pieceSelection_param int)
 begin
     declare piece_column_val varchar(255);
     declare isGameRunning_val int;
@@ -504,6 +422,12 @@ begin
     declare player_d_pieceId_val int;
     declare moveBlocks_val int;
     declare startingPossition_val int;
+    declare test int;
+    declare piecePossition_val int;
+    declare newPiecePossition_val int;
+    declare jump_val int;
+
+
 
     -- Get the user ID associated with the provided session token
     select userId into userId_val
@@ -635,35 +559,148 @@ begin
     where gameId=gameId_val;
 
 
+    -- Find the possition the players piece is
+    set @piecePossition_val =0;
+    set @sql = concat('select ', piece_column_val,' into @piecePossition_val from gameBoard join player_pieces where gameId=', gameId_val,' and playerId=', userId_val );
+    prepare stmt from @sql;
+    execute stmt;
+    deallocate prepare stmt;
+
+
+    select @piecePossition_val into test;
+
+
+    -- Check if diece is 6 when trying to move a null piece
+    if (@piecePossition_val is null and moveBlocks_val!=6) then
+        signal sqlstate '45000' set message_text = 'You need to roll a 6 to move this piece';
+    end if;
+
+
+
+    -- Make sure this works Check for illegal move
+    if exists(select * from player_pieces join gameBoard where gameId=gameId_val and playerId!=userId_val and
+        (piece1 = piece2 = piecePossition_val+moveBlocks_val
+            OR piece1 = piece3 = piecePossition_val+moveBlocks_val
+            OR piece1 = piece4 = piecePossition_val+moveBlocks_val
+            OR piece2 = piece3 = piecePossition_val+moveBlocks_val
+            OR piece2 = piece4 = piecePossition_val+moveBlocks_val
+            OR piece3 = piece4 = piecePossition_val+moveBlocks_val )) then
+        signal sqlstate '45000' set message_text = 'You cannot got to a possition with 2 enemy pieces';
+    end if;
+
+
+
+    -- PlayerA can directly continiun to home
+    -- Get the piece possition we are gonna land
+    set @newPiecePossition_val =0;
+    SET @sql = CONCAT(
+            'select ', piece_column_val,
+            ' into @newPiecePossition_val',
+            ' from player_pieces ',
+            'JOIN gameBoard ON playerId = ', userId_val,
+            ' where CASE',
+            ' WHEN ', player_a_id_val, '=',userId_val, ' then ( COALESCE( ', piece_column_val, ' , ',startingPossition_val,' ) + ', moveBlocks_val,' )'
+                ' WHEN ', @piecePossition_val,' = 52 THEN ', moveBlocks_val,
+            ' WHEN ', @piecePossition_val,' = 51 AND ', moveBlocks_val, ' BETWEEN 2 AND 6 THEN (', piece_column_val, ' + ', moveBlocks_val, ' - 52)',
+            ' WHEN ', @piecePossition_val,' = 50 AND ', moveBlocks_val, ' BETWEEN 3 AND 6 THEN (', piece_column_val, ' + ', moveBlocks_val, ' - 52)',
+            ' WHEN ', @piecePossition_val,' = 49 AND ', moveBlocks_val, ' BETWEEN 4 AND 6 THEN (', piece_column_val, ' + ', moveBlocks_val, ' - 52)',
+            ' WHEN ', @piecePossition_val,' = 48 AND ', moveBlocks_val, ' BETWEEN 5 AND 6 THEN (', piece_column_val, ' + ', moveBlocks_val, ' - 52)',
+            ' WHEN ', @piecePossition_val,' = 47 AND ', moveBlocks_val, ' = 6 THEN (', piece_column_val, ' + ', moveBlocks_val, ' - 52)',
+            ' ELSE COALESCE( ', piece_column_val, ' , ', startingPossition_val, ' )',
+            ' END and gameId = ', gameId_val
+               );
+    prepare stmt from @sql;
+    execute stmt;
+    deallocate prepare stmt;
+
+    -- Find if player needs to go home route
+    set  jump_val =  case
+                         when player_b_id_val = userId_val then
+                             case
+                                 when @piecePossition_val = 13 then 45
+                                 when @piecePossition_val = 12 and moveBlocks_val between 6 and 2 then 45
+                                 when @piecePossition_val = 11 and moveBlocks_val between  6 and 3 then 45
+                                 when @piecePossition_val = 10 and moveBlocks_val between  6 and 4 then 45
+                                 when @piecePossition_val = 9 and moveBlocks_val between  6 and 5 then 45
+                                 when @piecePossition_val = 8 and moveBlocks_val = 6 then 45
+                                 else 0
+                                 end
+                         when player_c_id_val = userId_val then
+                             case
+                                 when @piecePossition_val = 26 then 38
+                                 when @piecePossition_val = 25 and moveBlocks_val between 6 and 2 then 38
+                                 when @piecePossition_val = 24 and moveBlocks_val between  6 and 3 then 38
+                                 when @piecePossition_val = 23 and moveBlocks_val between  6 and 4 then 38
+                                 when @piecePossition_val = 22 and moveBlocks_val between  6 and 5 then 38
+                                 when @piecePossition_val = 21 and moveBlocks_val = 6 then 38
+                                 else 0
+                                 end
+
+                         when player_d_id_val = userId_val then
+                             case
+                                 when @piecePossition_val = 39 then 31
+                                 when @piecePossition_val = 38 and moveBlocks_val between 6 and 2 then 31
+                                 when @piecePossition_val = 37 and moveBlocks_val between  6 and 3 then 31
+                                 when @piecePossition_val = 36 and moveBlocks_val between  6 and 4 then 31
+                                 when @piecePossition_val = 35 and moveBlocks_val between  6 and 5 then 31
+                                 when @piecePossition_val = 34 and moveBlocks_val = 6 then 31
+                                 else 0
+                                 end
+                         else 0
+
+        end;
+
+    update player_pieces join gameBoard
+    set piece1=null
+    where playerId!=userId_val and piece1=@newPiecePossition_val and gameId=gameId_val;
+
+    update player_pieces join gameBoard
+    set piece2=null
+    where playerId!=userId_val and piece2=@newPiecePossition_val and gameId=gameId_val;
+
+    update player_pieces join gameBoard
+    set piece3=null
+    where playerId!=userId_val and piece3=@newPiecePossition_val and gameId=gameId_val;
+
+    update player_pieces join gameBoard
+    set piece4=null
+    where playerId!=userId_val and piece4=@newPiecePossition_val and gameId=gameId_val;
+
+
     -- IF !PLAYER_A
     if (player_a_id_val!=userId_val) then
         SET @sql = CONCAT(
-                'UPDATE player_pieces
-                 JOIN gameBoard ON playerId = ', userId_val,
+                'UPDATE player_pieces ',
+                'JOIN gameBoard on playerId = ', userId_val,
                 ' SET ', piece_column_val, ' = CASE',
-                ' WHEN ', piece_column_val, ' IS NULL THEN (COALESCE(', piece_column_val, ',', startingPossition_val, ') + ', moveBlocks_val, ' )',
-                ' WHEN ', piece_column_val, ' = 52 THEN (', piece_column_val, ' = ', moveBlocks_val, ' )',
-                ' WHEN ', piece_column_val, ' = 51 AND ', moveBlocks_val, '  BETWEEN 2 AND 6 THEN (', moveBlocks_val, '  - 52)',
-                ' WHEN ', piece_column_val, ' = 50 AND ', moveBlocks_val, '  BETWEEN 3 AND 6 THEN (', moveBlocks_val, '  - 52)',
-                ' WHEN ', piece_column_val, ' = 49 AND ', moveBlocks_val, '  BETWEEN 4 AND 6 THEN (', moveBlocks_val, '  - 52)',
-                ' WHEN ', piece_column_val, ' = 48 AND ', moveBlocks_val, '  BETWEEN 5 AND 6 THEN (', moveBlocks_val, '  - 52)',
-                ' WHEN ', piece_column_val, ' = 47 AND ', moveBlocks_val, '  = 6 THEN (', moveBlocks_val, '  - 52)',
-                ' END
-                 WHERE gameId = ', gameId_val
+                ' WHEN ', @piecePossition_val,' = 52 THEN ', moveBlocks_val,
+                ' WHEN ', @piecePossition_val,' = 51 AND ', moveBlocks_val, ' BETWEEN 2 AND 6 THEN (', piece_column_val, ' + ', moveBlocks_val, ' - 52)',
+                ' WHEN ', @piecePossition_val,' = 50 AND ', moveBlocks_val, ' BETWEEN 3 AND 6 THEN (', piece_column_val, ' + ', moveBlocks_val, ' - 52)',
+                ' WHEN ', @piecePossition_val,' = 49 AND ', moveBlocks_val, ' BETWEEN 4 AND 6 THEN (', piece_column_val, ' + ', moveBlocks_val, ' - 52)',
+                ' WHEN ', @piecePossition_val,' = 48 AND ', moveBlocks_val, ' BETWEEN 5 AND 6 THEN (', piece_column_val, ' + ', moveBlocks_val, ' - 52)',
+                ' WHEN ', @piecePossition_val,' = 47 AND ', moveBlocks_val, ' = 6 THEN (', piece_column_val, ' + ', moveBlocks_val, ' - 52)',
+                ' WHEN ', @piecePossition_val, ' IS NULL THEN ',startingPossition_val,
+                ' ELSE ', @piecePossition_val, '+', jump_val, '+', moveBlocks_val,
+                ' END where gameId = ', gameId_val
                    );
+
         -- IF PLAYER_A
     else
         set @sql = concat('update player_pieces join gameBoard on playerId = ', userId_val, ' set ', piece_column_val, ' = COALESCE(', piece_column_val, ',',startingPossition_val,' ) + ', moveBlocks_val, '  where gameId = ',gameId_val);
     end if;
+
+    -- Delete any single pieces that are there
+
+
     -- Prepare and execute the dynamic SQL
+
 
     prepare stmt from @sql;
     execute stmt;
     deallocate prepare stmt;
 end;
 
-create
-    definer = kastik@localhost function updateDiceValue(sessionToken_param varchar(255), newValue_param int) returns tinyint(1)
+create function updateDiceValue(sessionToken_param varchar(255), newValue_param int) returns tinyint(1)
 begin
     declare userId_val int;
     declare isPlayersTurn_val int;

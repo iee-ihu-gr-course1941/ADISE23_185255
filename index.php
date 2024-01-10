@@ -1,11 +1,5 @@
 <?php
 
-/*
-* TODO Check if this will be better
-* $request = explode('/', trim($_SERVER['PATH_INFO'], '/'));
-* $input = json_decode(file_get_contents('php://input'), true);
-*/
-
 
 
 header("Content-type: application/json; charset=UTF-8");

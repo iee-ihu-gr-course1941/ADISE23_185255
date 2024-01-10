@@ -1,9 +1,7 @@
 <?php
 require_once 'DatabaseConnection.php';
 
-
 function rollDice(): void{
-    //TODO Make sure player can't roll multiple times
     $dice['roll'] = rand(1, 6);
     global $conn;
     $sql = 'select updateDiceValue(?, ?) as result';
