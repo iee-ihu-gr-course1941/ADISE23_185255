@@ -5,7 +5,7 @@ class ErrorHandler{
         http_response_code(500);
         echo json_encode([
             "code" => $exception->getCode(),
-            "message" => $exception->getMessage(),
+            "message" => $exception->getMessage()
         ]);
     }
 }
