@@ -1,7 +1,5 @@
 <?php
 
-
-
 header("Content-type: application/json; charset=UTF-8");
 require_once "lib/ErrorHandler.php";
 set_exception_handler("ErrorHandler::handleException");
@@ -15,15 +13,15 @@ require_once "lib/Ludo.php";
 $requestURI = explode("/",$_SERVER["REQUEST_URI"]);
 $httpMethod = $_SERVER['REQUEST_METHOD'];
 
-switch ($requestURI[1]) {
+switch ($requestURI[2]) {
     case 'user':{
-        if($httpMethod=="GET"){
-            userAuth($requestURI[2],$requestURI[3]);
+        if($requestURI[3]=='auth'){
+            userAuth($requestURI[4],$requestURI[5]);
             break;
-        }elseif($httpMethod=="POST"){
-            createUser($requestURI[2],$requestURI[3]);
+        }elseif($requestURI[3]=="create"){
+            createUser($requestURI[4],$requestURI[5]);
             break;
-        }elseif($httpMethod=='PUT'){
+        }elseif($requestURI[3]=='info'){
             showUserInfo();
             break;
         }else{
@@ -34,55 +32,50 @@ switch ($requestURI[1]) {
     }
     case 'game':
     {
-        if ($httpMethod == "GET") {
-            showScoreBoard();
-            break;
-        } elseif ($httpMethod == "POST") {
-            switch ($requestURI[2]) {
-                case 'gameState':
-                {
-                    getGameState();
-                    break;
-                }
-                case 'dice':
-                {
-                    rollDice();
-                    break;
-                }
-                case 'move':
-                {
-                    movePiece($requestURI[3]);
-                    break;
-                }
-                case 'init':
-                {
-                    initGame();
-                    break;
-                }
-                default:
-                {
-                    http_response_code(404);
-                    echo json_encode("Not found");
-                    break;
-                }
+        switch ($requestURI[3]) {
+            case 'scores':{
+                showScoreBoard();
+                break;
             }
-            break;
-        } else {
-            http_response_code(404);
-            //TODO MAYBE SOMETHING ELSE Like DELETE OR keep 404
-            break;
+            case 'gameState':
+            {
+                getGameState();
+                break;
+            }
+            case 'dice':
+            {
+                rollDice();
+                break;
+            }
+            case 'move':
+            {
+                movePiece($requestURI[4]);
+                break;
+            }
+            case 'init':
+            {
+                initGame();
+                break;
+            }
+            default:
+            {
+                http_response_code(404);
+                echo json_encode("Not found :(");
+                break;
+            }
         }
+        break;
     }
     case "rooms": {
-        if($httpMethod=="POST"){
-            joinRoom($requestURI[2]);
+        if($requestURI[3]=='join'){
+            joinRoom($requestURI[4]);
             break;
-        }elseif($httpMethod=="GET"){
+        }elseif($requestURI[3]=='info'){
             getRooms();
             break;
         }
-        elseif($httpMethod=="PUT"){
-            createRoom($requestURI[2]);
+        elseif($requestURI[3]=='create'){
+            createRoom($requestURI[4]);
             break;
         }else{
             http_response_code(404);
@@ -91,8 +84,8 @@ switch ($requestURI[1]) {
         }
     }
     default:{
-        echo json_encode("DEFAULT");
-        http_response_code(404);
+        echo json_encode("sOmEtHiNg Is WrOnG");
+	    http_response_code(404);
         break;
     }
 }

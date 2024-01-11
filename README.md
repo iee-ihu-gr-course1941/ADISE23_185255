@@ -47,76 +47,76 @@ To use this API, you'll need a web server with PHP and a MariaDB database. Follo
 
 #### 1. User Authentication
 
-- **Endpoint:** `/user`
+- **Endpoint:** `/user/auth/{parameter1}/{parameter2}`
 - **Method:** `GET`
 - **Parameters:** `username` and `password`
 - **Description:** Authenticates a user. Returns a session token on successful login.
 
 #### 2. User Registration
 
-- **Endpoint:** `/user`
-- **Method:** `POST`
+- **Endpoint:** `/user/create/{parameter1}/{parameter2}`
+- **Method:** `GET`
 - **Parameters:** `username` and `password`
 - **Description:** Registers a new user.
 
 #### 3. Get User Information
 
-- **Endpoint:** `/user`
-- **Method:** `PUT`
+- **Endpoint:** `/user/info`
+- **Method:** `GET`
 - **Description:** Retrieves information about the authenticated user.
 
 ### Game Management
 
 #### 1. Get Scoreboard
 
-- **Endpoint:** `/game`
+- **Endpoint:** `/game/score`
 - **Method:** `GET`
 - **Description:** Retrieves the current scoreboard.
 
 #### 2. Game State
 
 - **Endpoint:** `/game/gameState`
-- **Method:** `POST`
+- **Method:** `GET`
 - **Description:** Retrieves the current state of the game.
 
 #### 3. Roll Dice
 
 - **Endpoint:** `/game/dice`
-- **Method:** `POST`
+- **Method:** `GET`
 - **Description:** Rolls the dice for the current player if the game is still running.
 
 #### 4. Move Piece
 
 - **Endpoint:** `/game/move/{piece}`
-- **Method:** `POST`
+- **Method:** `GET`
 - **Parameters:** `piece` (piece ID)
 - **Description:** Moves the specified game piece can take values 1-4.
 
 #### 5. Initialize Game
 
 - **Endpoint:** `/game/init`
-- **Method:** `POST`
+- **Method:** `GET`
 - **Description:** Initializes the game only if it is run by the room creator.
 
 ### Room Management
 
 #### 1. Create Room
 
-- **Endpoint:** `/rooms`
-- **Method:** `PUT`
+- **Endpoint:** `/rooms/create/{parameter}`
+- **Method:** `GET`
 - **Parameters:** `roomName`
-- **Description:** Creates a new game room.
+- **Description:** Creates a new game room named parameter.
 
 #### 2. Join Room
 
-- **Endpoint:** `/rooms`
-- **Method:** `POST`
+- **Endpoint:** `/rooms/join/{parameter}`
+- **Method:** `GET`
 - **Parameters:** `roomName`
-- **Description:** Joins an existing game room.
+- **Description:** Joins a game room named parameter.
 
 #### 3. Get Rooms
 
-- **Endpoint:** `/rooms`
+- **Endpoint:** `/rooms/info`
 - **Method:** `GET`
 - **Description:** Retrieves a list of available game rooms.
 
